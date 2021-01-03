@@ -11,6 +11,11 @@ use yii\web\NotFoundHttpException;
 
 class UserController extends Controller
 {
+    /**
+     * @return User
+     * @throws HttpException
+     * @throws \yii\base\Exception
+     */
     public function actionCreate()
     {
         $user = new User();
@@ -29,11 +34,21 @@ class UserController extends Controller
         return $user;
     }
 
+    /**
+     * @param int $id
+     * @return User|\yii\web\IdentityInterface|null
+     */
     public function actionGet(int $id)
     {
         return User::findIdentity($id);
     }
 
+    /**
+     * @param int $id
+     * @return User|\yii\web\IdentityInterface|null
+     * @throws HttpException
+     * @throws NotFoundHttpException
+     */
     public function actionUpdate(int $id)
     {
         $user = User::findIdentity($id);

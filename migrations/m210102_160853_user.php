@@ -20,6 +20,7 @@ class m210102_160853_user extends Migration
                 ->comment('Дата и время создания'),
             'access_token' => $this->string()->null()->unique(),
             'access_token_expired_at' => $this->string()->null()->unique(),
+            'avatar_uuid' => $this->string()->null(),
         ]);
     }
 
@@ -30,19 +31,4 @@ class m210102_160853_user extends Migration
     {
         $this->dropTable('user');
     }
-
-    /*
-    // Use up()/down() to run migration code without a transaction.
-    public function up()
-    {
-
-    }
-
-    public function down()
-    {
-        echo "m210102_160853_user cannot be reverted.\n";
-
-        return false;
-    }
-    */
 }

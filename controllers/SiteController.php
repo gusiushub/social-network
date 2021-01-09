@@ -2,9 +2,11 @@
 
 namespace app\controllers;
 
+use app\models\Response;
 use app\models\User;
 use Yii;
 use yii\filters\auth\HttpBearerAuth;
+use yii\helpers\ArrayHelper;
 use yii\rest\Controller;
 use yii\web\HttpException;
 use yii\filters\VerbFilter;
@@ -62,10 +64,12 @@ class SiteController extends Controller
      */
     public function actionLogin()
     {
-        $user = User::findByUsername(Yii::$app->request->post('login'));
+        $bodyParams = Yii::$app->request->bodyParams;
 
-        if (!$user or !$user->validatePassword(Yii::$app->request->post('password'))) {
-            throw new HttpException(400, 'Пошел в пизду уебан!!!');
+        $user = User::findByUsername(ArrayHelper::getValue($bodyParams, 'login'));
+
+        if (!$user or !$user->validatePassword(ArrayHelper::getValue($bodyParams, 'password'))) {
+            throw new HttpException(Response::BAD_REQUEST, 'Пошел в пизду уебан!!!');
         }
 
         Yii::$app->user->login($user, $user->rememberMe ? 3600*24*30 : 0);

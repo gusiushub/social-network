@@ -6,15 +6,20 @@ use yii\db\ActiveRecord;
 
 class User extends ActiveRecord implements \yii\web\IdentityInterface
 {
+    public $rememberMe = true;
+
     const SCENARIO_CREATE = 'create';
     const SCENARIO_UPDATE = 'update';
     const SCENARIO_GET = 'get';
     const SCENARIO_REFRESH_TOKEN = 'refresh_token';
 
-
+    /**
+     * @return array
+     */
     public function scenarios()
     {
         return [
+            self::SCENARIO_DEFAULT => ['login', 'password', 'access_token', 'access_token_expired_at'],
             self::SCENARIO_CREATE => ['login', 'password'],
             self::SCENARIO_UPDATE => ['login', 'password'],
             self::SCENARIO_GET => [],
@@ -35,11 +40,24 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
     }
 
     /**
+     * @param bool $insert
+     * @return bool
+     * @throws \yii\base\Exception
+     */
+    public function beforeSave($insert)
+    {
+        if ($this->password) {
+            $this->password = \Yii::$app->security->generatePasswordHash($this->password);
+        }
+        return parent::beforeSave($insert);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public static function findIdentity($id)
     {
-        return self::findOne(['user_id'=>$id]);
+        return self::findOne(['user_id' => $id]);
     }
 
     /**
@@ -53,6 +71,17 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
             ->one();
     }
 
+    public static function findIdentityByBearerAccessToken($token, $type = null)
+    {
+        return self::find()
+            ->where('access_token=:access_token', [
+                'access_token' => str_replace('Bearer ', '', $token)
+            ])
+            ->andWhere('access_token is not null')
+            ->one();
+    }
+
+
     /**
      * @return bool
      */
@@ -61,10 +90,14 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
         return !$this->access_token || strtotime($this->access_token_expired_at) < time();
     }
 
+    /**
+     * @throws \yii\base\Exception
+     */
     public function refreshToken()
     {
         $this->access_token = \Yii::$app->security->generateRandomString();
-        $this->access_token_expired_at = date('Y-m-d H:i:s', strtotime('now'));// + Setting::getValue('token_lifetime', 604800));
+        // + Setting::getValue('token_lifetime', 604800));
+        $this->access_token_expired_at = date('Y-m-d H:i:s', strtotime('now'));
         $this->save();
         $this->refresh();
 
@@ -108,9 +141,10 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
      *
      * @param string $password password to validate
      * @return bool if password provided is valid for current user
+     * @throws \yii\base\Exception
      */
     public function validatePassword($password)
     {
-        return $this->password === $password;
+        return \Yii::$app->security->validatePassword($password, \Yii::$app->security->generatePasswordHash($password));
     }
 }
